@@ -72,7 +72,6 @@ static void write_pid_line(const char *tag, pid_t pid) {
 /* SIGCHLD: one or more children have finished. */
 static void on_sigchld(int signo) {
     (void) signo;
-    (void) write_pid_line;                   /* delete this line once TODO 1 calls it */
     /* TODO 1. Reap EVERY finished child, and report each one.
      *
      *   - save errno at the top and restore it at the bottom
@@ -83,6 +82,17 @@ static void on_sigchld(int signo) {
      * Only async-signal-safe calls in here: waitpid and write are; printf
      * is not.
      */
+
+    int saved_errno = errno;
+    int status;
+    pid_t pid;
+
+    while ((pid = waitpid(-1, &status, WNOHANG)) > 0) {
+        write_pid_line("[done]", pid);
+    }
+
+    errno = saved_errno;
+
 }
 
 /* SIGINT: Ctrl-C was pressed. */
@@ -95,12 +105,14 @@ static void on_sigint(int signo) {
      * Store write's return value in a variable and cast it to void, as
      * write_pid_line does, or the Linux build warns.
      */
+
+    ssize_t r = write(STDOUT_FILENO, "\n", 1);
+    (void) r;
+
 }
 
 /* Install `handler` for `signo`, with SA_RESTART, or exit on failure. */
 static void install(int signo, void (*handler)(int)) {
-    (void) signo;
-    (void) handler;
     /* TODO 3. Fill in a struct sigaction and call sigaction():
      *
      *   - memset it to zero
@@ -111,6 +123,19 @@ static void install(int signo, void (*handler)(int)) {
      *
      * Then delete the two (void) lines above.
      */
+
+    struct sigaction sa;
+
+    memset(&sa, 0, sizeof(sa));
+    sa.sa_handler = handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+
+    if (sigaction(signo, &sa, NULL) == -1) {
+        perror("sigaction");
+        exit(1);
+    }
+
 }
 
 /* ------------------------------------------------------------------ */
@@ -207,7 +232,28 @@ static void run_background(char *argv[]) {
      * Keep block_sigchld() before the fork, so a job that exits at once is
      * still reported in the order started, then done.
      */
-    run_foreground(argv);
+
+    sigset_t old_mask;
+    block_sigchld(&old_mask);
+    fflush(stdout);
+
+    pid_t pid = fork();
+
+    if (pid == -1) {
+        perror("fork");
+        restore_mask(&old_mask);
+        return;
+    }
+
+    if (pid == 0) {
+        setpgid(0, 0);
+        exec_command(argv, &old_mask);
+    }
+
+    printf("[bg] %d\n", (int) pid);
+    fflush(stdout);
+    restore_mask(&old_mask);
+
 }
 
 /* ------------------------------------------------------------------ */

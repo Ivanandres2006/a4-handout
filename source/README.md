@@ -81,13 +81,24 @@ start rather than after. It also explains the `## Answers` block in
 
 *How is it built? Give the exact command.*
 
+make
+
 ## Run
 
 *How do you run it? Give the exact command.*
 
+./runner
+
 ## File map
 
 *One line per file: what it is for.*
+
+src/runner.c - main code for the runner
+tests/ - tests for the assignment
+Makefile - builds and tests the program
+README.md - explains the assignment and how to run it
+REPORT.md - contains my answers and results
+submission.json - information for the submission
 
 ## Notes
 

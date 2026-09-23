@@ -1,0 +1,6 @@
+Pre-submission warnings, shown when `make test` ran.
+These were displayed before submission and not resolved.
+
+- REPORT.md still contains the starter's italic prompt text.
+- submission.json: `entrypoint` still holds the example value 'the exact command that runs your work'.
+- submission.json: `what_i_built` still holds the example value 'one sentence, in your own words'.
