@@ -103,3 +103,5 @@ submission.json - information for the submission
 ## Notes
 
 *Anything a reader should know — what is unfinished, what you would do next, anything that surprised you.*
+
+Everything is finished and all tests passed.
